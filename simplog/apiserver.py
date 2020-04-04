@@ -13,5 +13,7 @@ class SimplogHome(Resource):
 if __name__ == '__main__':
     root = SimplogHome()
     site_factory = Site(root)
-    reactor.listenTCP(8080, site_factory)
+    port = 8080
+    reactor.listenTCP(port, site_factory)
+    print("listening {}...".format(port))
     reactor.run()
