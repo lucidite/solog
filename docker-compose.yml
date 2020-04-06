@@ -1,7 +1,9 @@
 version: '3'
 services:
   mongo:
-    image: mongo
+    image: mongo:4.2
+    volumes:
+      - 'mongo:/data/db'
     networks:
       - simplognet
 
@@ -9,10 +11,13 @@ services:
     build: ./simplog
     ports:
       - "8080:8080"
-    depends_on:
-      - mongo
     networks:
       - simplognet
+    depends_on:
+      - mongo
+
+volumes:
+  mongo:
 
 networks:
   simplognet:
