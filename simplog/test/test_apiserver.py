@@ -39,7 +39,25 @@ class SimplogTestCase(unittest.TestCase):
         response = yield self.web.get(b'groups/movie', args={'title': 'StarWars'})
 
         # Then
-        self.assertIn(response.responseCode, [200, None], 'GET /groups/movie?title=StarWars should return 200 OK')
+        self.assertIn(
+            response.responseCode, [200, None],
+            f'GET /groups/movie?title=StarWars should return 200 OK: result={response.responseCode}'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_content_type(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'title': 'StarWars'})
+
+        # Then
+        content_type_headers = response.responseHeaders.getRawHeaders('Content-Type')
+        expected_content_type_headers = ['application/json; charset=utf-8']
+        self.assertEqual(
+            content_type_headers, expected_content_type_headers,
+            f'GET /groups/movie?title=StarWars should return content-type {expected_content_type_headers}: '
+            f'result={content_type_headers}'
+        )
 
     @inlineCallbacks
     def test_GET_log_group_Test_response_data(self):
@@ -69,7 +87,29 @@ class SimplogTestCase(unittest.TestCase):
         response = yield self.web.post(b'groups/movie', args={'data': new_logs})
 
         # Then
-        self.assertIn(response.responseCode, [200, None], 'POST /groups/movie should return 200 OK')
+        self.assertIn(
+            response.responseCode, [200, None],
+            f'POST /groups/movie should return 200 OK: result={response.responseCode}'
+        )
+
+    @inlineCallbacks
+    def test_POST_log_group_Test_content_type(self):
+        # Given
+        new_logs = [
+            dict(title='Frozen', message="Let It Go"),
+        ]
+
+        # When
+        response = yield self.web.post(b'groups/movie', args={'data': new_logs})
+
+        # Then
+        content_type_headers = response.responseHeaders.getRawHeaders('Content-Type')
+        expected_content_type_headers = ['application/json; charset=utf-8']
+        self.assertEqual(
+            content_type_headers, expected_content_type_headers,
+            f'POST /groups/movie should return content-type {expected_content_type_headers}: '
+            f'result={content_type_headers}'
+        )
 
     @inlineCallbacks
     def test_POST_log_group_Test_response_data(self):

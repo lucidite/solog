@@ -6,6 +6,9 @@ from twisted.internet import reactor
 from twisted.web.resource import Resource, NoResource
 from twisted.web.server import Site
 
+_content_type_key = 'Content-Type'
+_content_type_value = 'application/json; charset=utf-8'
+
 
 class SimplogHome(Resource):
     def __init__(self, db_connection):
@@ -41,6 +44,7 @@ class LogGroupPage(Resource):
         # constraints:
         # - only one value for each key is allowed now
         # - values are considered as string
+        request.setHeader(_content_type_key, _content_type_value)
         query = {
             k.decode('utf-8'): v[0].decode('utf-8')
             for k, v in request.args.items()
@@ -50,6 +54,7 @@ class LogGroupPage(Resource):
 
     def render_POST(self, request):
         raw_log_data = request.content.getvalue().decode('utf-8')
+        request.setHeader(_content_type_key, _content_type_value)
         try:
             logs = json.loads(raw_log_data)
             log_ids = self.log_collection.insert_many(logs).inserted_ids
