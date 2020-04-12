@@ -8,6 +8,10 @@ from twisted.web.server import Site
 
 _content_type_key = 'Content-Type'
 _content_type_value = 'application/json; charset=utf-8'
+_value_type_postfix = {
+    ':int': int,
+    ':float': float,
+}
 
 
 class SimplogHome(Resource):
@@ -43,11 +47,10 @@ class LogGroupPage(Resource):
     def render_GET(self, request):
         # constraints:
         # - only one value for each key is allowed now
-        # - values are considered as string
         request.setHeader(_content_type_key, _content_type_value)
         query = {
-            k.decode('utf-8'): v[0].decode('utf-8')
-            for k, v in request.args.items()
+            field: condition for field, condition
+            in (decode_query_argument(k, v) for k, v in request.args.items())
         }
         logs = [l for l in self.log_collection.find(query)]
         return json.dumps({"logs": logs}, cls=MongoDocumentEncoder).encode("utf-8")
@@ -74,8 +77,35 @@ class MongoDocumentEncoder(json.JSONEncoder):
     def default(self, o):
         try:
             return str(o)
-        except KeyError as e:
+        except KeyError:
             return super(MongoDocumentEncoder, self).default(o)
+
+
+def decode_arg_key(arg_key):
+    arg_key = arg_key.decode('utf-8')
+    for postfix, value_type in _value_type_postfix.items():
+        if arg_key.endswith(postfix):
+            def convert(value_str):
+                return value_type(value_str) if value_str else ''
+            return arg_key[:-len(postfix)], convert
+    return arg_key, str     # default
+
+
+def decode_query_argument(arg_key, arg_values):
+    arg_key, convert = decode_arg_key(arg_key)
+    arg_value = arg_values[0].decode('utf-8')
+    if arg_value.startswith('[') and arg_value.endswith(']'):
+        range_segments = arg_value[1:-1].split(":")
+        if len(range_segments) == 2:
+            try:
+                range_dict = {
+                    '$gte': convert(range_segments[0]),
+                    '$lt': convert(range_segments[1]),
+                }
+                return arg_key, {k: v for k, v in range_dict.items() if v}
+            except ValueError:
+                raise
+    return arg_key, convert(arg_value)
 
 
 if __name__ == '__main__':

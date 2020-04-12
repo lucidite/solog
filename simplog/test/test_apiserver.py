@@ -14,10 +14,10 @@ class SimplogTestCase(unittest.TestCase):
         self.log_db = connection.logs
         movie_group_collection = self.log_db.movie
         self.movie_log_objects = [
-            dict(title='Terminator', text="I'll be back"),
-            dict(title='StarWars', message="May the Force be with You"),
-            dict(title='DarkKnight', message="Why so Serious?", actor="Heath Ledger", note="Joker"),
-            dict(title='StarWars', message="I Am Your Father", note="Darth Vader"),
+            dict(title='Terminator', text="I'll be back", year=1984, stars=3.9),
+            dict(title='StarWars', text="May the Force be with You", year=1977, stars=3.9),
+            dict(title='DarkKnight', text="Why so Serious?", actor="Heath Ledger", year=2008, stars=4.3),
+            dict(title='StarWars', subtitle="The Empire Strikes Back", text="I Am Your Father", year=1980, stars=4.0),
         ]
         for log_object in self.movie_log_objects:
             # inserted_id returns ObjectId,
@@ -74,6 +74,178 @@ class SimplogTestCase(unittest.TestCase):
         self.assertListEqual(
             result['logs'], expected_result,
             'GET /groups/movie?title=StarWars should return logs with title "StarWars"'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Str_range_query(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'text': '[I:J]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?text=[I:J] should return logs with text between I and J"'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Str_range_query_Cond_left_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'text': '[:W]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[1],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?text=[:W] should return logs with text least than W'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Str_range_query_Cond_right_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'text': '[M:]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[1],
+            self.movie_log_objects[2],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?text=[M:] should return logs with text greater than M"'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Int_query(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'year:int': '1984'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?year:int=1984 should return logs with year=1984'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Int_range_query(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'year:int': '[1980:2008]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?year:int=[1980:2008] should return logs with year in [1980,2008)'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Int_range_query_Cond_left_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'year:int': '[:1984]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[1],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?year:int=[:1984] should return logs with year in [,1984)'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Int_range_query_Cond_right_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'year:int': '[1980:]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[2],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?year:int=[1980:] should return logs with year in [1980,)'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Float_range_query(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'stars:float': '[3.5:4.0]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[1],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?stars:float=[3.5:4.0] should return logs with stars=[3.5:4.0)'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Float_range_query_Cond_left_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'stars:float': '[:4.3]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[0],
+            self.movie_log_objects[1],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?stars:float=[:4.2] should return logs with stars=[:4.3)'
+        )
+
+    @inlineCallbacks
+    def test_GET_log_group_Test_response_data_Float_range_query_Cond_right_open(self):
+        # Given
+        # When
+        response = yield self.web.get(b'groups/movie', args={'stars:float': '[4.0:]'})
+        result = json.loads(response.written[0].decode('utf-8'))
+
+        # Then
+        expected_result = [
+            self.movie_log_objects[2],
+            self.movie_log_objects[3],
+        ]
+        self.assertListEqual(
+            result['logs'], expected_result,
+            'GET /groups/movie?stars:float=[4.0:] should return logs with stars=[4.0:)'
         )
 
     @inlineCallbacks
